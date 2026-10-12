@@ -15,24 +15,25 @@
   .num { font-size:40px; font-weight:800; letter-spacing:.02em; font-variant-numeric:tabular-nums; }
   a.big { display:block; padding:22px 16px; border-radius:16px; color:#fff; font-size:24px; font-weight:800; text-decoration:none; }
   a.call { background:var(--btn); }
-  .howback { border:3px solid var(--back); border-radius:16px; padding:18px 12px; font-size:22px; font-weight:700; line-height:1.6; }
-  .howback span { font-size:16px; font-weight:400; color:var(--muted); }
-  .howback::before { content:"↖"; display:block; font-size:40px; line-height:1; color:var(--back); text-align:left; }
+  a.back { background:var(--back); }
   p.small { font-size:13px; }
   p.small a { color:var(--muted); }
   p { margin:0; color:var(--muted); font-size:16px; line-height:1.7; }
 </style>
 </head>
 <body>
-<!-- オートガレージナイン 配車アプリ用の電話の中継ページ（v4 2026-10-12）。
+<!-- オートガレージナイン 配車アプリ用の電話の中継ページ（v5 2026-10-12）。
+     v5：電話のあとは「◀ Claude」が出ない（オーナーのスクショ 10:55）。「配車アプリに戻る」ボタンを戻す（09:18 の報告で Claude アプリに戻れている）。
+     v5：開いただけでは発信しない（10:57「切ったのに相手とつながったまま」：画面が開き直されたときに自動でもう一度発信した可能性）。「📞 発信する」を押したときだけかける。
+         2回目に電話にならないのは、Safari が同じURLの前のタブを出すだけで読み込み直さないため。配車アプリはURLの最後に時刻を付け、このページは # が変わったら読み込み直す。
      v4：iPhone ではこのページは Safari で開き、上に「完了」「✕」は出ない（オーナーのスクショ 10:50）。戻るときは左上の「◀ Claude」で Claude アプリに戻ってもらう。
      v3：「配車アプリに戻る」で配車アプリをこの画面の中に開き直すと、そこでは電話ボタンがうまく動かなかった（2回目にかからない／マップが開く）。
      戻るときは、この画面の左上の「完了」で閉じてもらう（元の配車アプリがそのまま残っている）。
      番号は URL の # の後ろ（例 …/#09012345678 または …/#09012345678|p）で受け取る。# の後ろはブラウザの中だけで使われ、サーバーには送られない。
      このページは番号を保存も送信もしない。| の後ろは戻り先（p＝本番の配車アプリ、t＝テスト版）。 -->
 <div class="num" id="num">番号がありません</div>
-<a class="big call" id="call" href="#" hidden>📞 もう一度かける</a>
-<div class="howback" id="howback" hidden>電話が終わったら<br>画面の<b>左上の「◀ Claude」</b>を<br>押してください<br><span>配車アプリの同じ案件に戻ります。<br>「◀ Claude」が出ていないときは、画面の一番下から上へ少しスワイプして、Claude を選んでください。</span></div>
+<a class="big call" id="call" href="#" hidden>📞 発信する</a>
+<a class="big back" id="back" href="#" hidden>↩ 配車アプリに戻る</a>
 <p id="msg">配車アプリの「電話をかける」から開いてください。</p>
 <script>
 (function () {
@@ -45,17 +46,10 @@
   document.getElementById("num").textContent = shown;
   document.title = "電話：" + shown;
   var call = document.getElementById("call"); call.href = "tel:" + n; call.hidden = false;
-  document.getElementById("howback").hidden = false;
-  document.getElementById("msg").textContent = "「発信」を押すと電話がかかります。かからなかったときは「もう一度かける」を押してください。";
-  // 開いたらすぐ電話の確認を出す
-  setTimeout(function () { location.href = "tel:" + n; }, 150);
-  // 電話から戻ってきたら、この画面を閉じてみる（閉じられないときは左上の「◀ Claude」で戻ってもらう）
-  var left = false;
-  document.addEventListener("visibilitychange", function () {
-    if (document.hidden) { left = true; return; }
-    if (left) { try { window.close(); } catch (e) {} }
-  });
-  window.addEventListener("pagehide", function () { left = true; });
+  var b = document.getElementById("back"); b.href = back; b.hidden = false;
+  document.getElementById("msg").textContent = "①「📞 発信する」を押すと電話がかかります。② 電話が終わったら「↩ 配車アプリに戻る」を押してください。";
+  // 同じタブで別の電話番号を開いたときは、番号を出し直す（発信はボタンを押したときだけ）
+  window.addEventListener("hashchange", function () { location.reload(); });
 })();
 </script>
 </body>
