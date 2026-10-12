@@ -7,41 +7,48 @@
 <meta name="referrer" content="no-referrer">
 <title>電話をかける</title>
 <style>
-  :root { color-scheme: light dark; --bg:#F6F7F9; --ink:#111827; --muted:#4B5563; --btn:#C2410C; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#111418; --ink:#F3F4F6; --muted:#9CA3AF; --btn:#EA580C; } }
+  :root { color-scheme: light dark; --bg:#F6F7F9; --ink:#111827; --muted:#4B5563; --btn:#C2410C; --back:#1D4ED8; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111418; --ink:#F3F4F6; --muted:#9CA3AF; --btn:#EA580C; --back:#3B82F6; } }
   * { box-sizing: border-box; }
-  body { margin:0; min-height:100vh; display:flex; flex-direction:column; justify-content:center; gap:20px; padding:24px 16px; background:var(--bg); color:var(--ink);
+  body { margin:0; min-height:100vh; display:flex; flex-direction:column; justify-content:center; gap:18px; padding:24px 16px; background:var(--bg); color:var(--ink);
     font-family:-apple-system,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif; text-align:center; }
   .num { font-size:40px; font-weight:800; letter-spacing:.02em; font-variant-numeric:tabular-nums; }
-  .who { font-size:22px; font-weight:700; }
-  a.call { display:block; padding:22px 16px; border-radius:16px; background:var(--btn); color:#fff; font-size:26px; font-weight:800; text-decoration:none; }
-  p { margin:0; color:var(--muted); font-size:15px; line-height:1.7; }
+  a.big { display:block; padding:22px 16px; border-radius:16px; color:#fff; font-size:24px; font-weight:800; text-decoration:none; }
+  a.call { background:var(--btn); }
+  a.back { background:var(--back); }
+  p { margin:0; color:var(--muted); font-size:16px; line-height:1.7; }
 </style>
 </head>
 <body>
-<!-- オートガレージナイン 配車アプリ用の電話の中継ページ。
-     電話番号は URL の # の後ろ（例 …/#09012345678）で受け取る。# の後ろはブラウザの中だけで使われ、このページのサーバーには送られない。
-     このページは番号を保存も送信もしない。 -->
-<div class="who" id="who"></div>
+<!-- オートガレージナイン 配車アプリ用の電話の中継ページ（v2 2026-10-12）。
+     番号は URL の # の後ろ（例 …/#09012345678 または …/#09012345678|p）で受け取る。# の後ろはブラウザの中だけで使われ、サーバーには送られない。
+     このページは番号を保存も送信もしない。| の後ろは戻り先（p＝本番の配車アプリ、t＝テスト版）。 -->
 <div class="num" id="num">番号がありません</div>
-<a class="call" id="call" href="#" hidden>📞 電話をかける</a>
+<a class="big call" id="call" href="#" hidden>📞 もう一度かける</a>
+<a class="big back" id="back" href="#" hidden>↩ 配車アプリに戻る</a>
 <p id="msg">配車アプリの「電話をかける」から開いてください。</p>
 <script>
 (function () {
-  var raw = decodeURIComponent((location.hash || "").slice(1));
-  var parts = raw.split("|");
-  var n = (parts[0] || "").replace(/[^\d+]/g, "");
-  var who = (parts[1] || "").slice(0, 40);
+  var BACK = { p: "https://claude.ai/artifact/6NFxD1vaUAgcBTRNkyLQbU", t: "https://claude.ai/artifact/MuWHSH6yir1jSEhkzMnwCt" };
+  var raw = decodeURIComponent((location.hash || "").slice(1)).split("|");
+  var n = (raw[0] || "").replace(/[^\d+]/g, "");
+  var back = BACK[raw[1]] || BACK.p;
   if (n.length < 3) return;
   var shown = n.replace(/^(0\d0)(\d{4})(\d{4})$/, "$1-$2-$3").replace(/^(0\d{1,3})(\d{2,4})(\d{4})$/, "$1-$2-$3");
   document.getElementById("num").textContent = shown;
-  document.getElementById("who").textContent = who ? who + " 様" : "";
-  var a = document.getElementById("call");
-  a.href = "tel:" + n; a.hidden = false;
-  document.getElementById("msg").textContent = "電話の確認が出たら「発信」を押してください。出ないときは上のボタンを押してください。";
   document.title = "電話：" + shown;
-  // 開いたらすぐ電話の確認を出す（出ないブラウザでもボタンで発信できる）
+  var call = document.getElementById("call"); call.href = "tel:" + n; call.hidden = false;
+  var b = document.getElementById("back"); b.href = back; b.hidden = false;
+  document.getElementById("msg").textContent = "「発信」を押すと電話がかかります。電話が終わったら「配車アプリに戻る」を押してください（この画面を閉じても戻れます）。";
+  // 開いたらすぐ電話の確認を出す
   setTimeout(function () { location.href = "tel:" + n; }, 150);
+  // 電話から戻ってきたら、この画面を閉じてみる（閉じられないブラウザでは「配車アプリに戻る」を押す）
+  var left = false;
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) { left = true; return; }
+    if (left) { try { window.close(); } catch (e) {} }
+  });
+  window.addEventListener("pagehide", function () { left = true; });
 })();
 </script>
 </body>
