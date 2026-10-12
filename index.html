@@ -22,7 +22,9 @@
 </style>
 </head>
 <body>
-<!-- オートガレージナイン 配車アプリ用の電話の中継ページ（v5 2026-10-12）。
+<!-- オートガレージナイン 配車アプリ用の電話の中継ページ（v6 2026-10-12）。
+     v6（ChatGPT レビュー 2026-10-12 の3）：画面のタイトルに番号を出さない。読み取ったら URL から番号を消す（履歴・アドレス欄に残りにくくする）。
+         読み込み直しに備えて、番号はこのタブの sessionStorage にだけ置く（タブを閉じると消える）。
      v5：電話のあとは「◀ Claude」が出ない（オーナーのスクショ 10:55）。「配車アプリに戻る」ボタンを戻す（09:18 の報告で Claude アプリに戻れている）。
      v5：開いただけでは発信しない（10:57「切ったのに相手とつながったまま」：画面が開き直されたときに自動でもう一度発信した可能性）。「📞 発信する」を押したときだけかける。
          2回目に電話にならないのは、Safari が同じURLの前のタブを出すだけで読み込み直さないため。配車アプリはURLの最後に時刻を付け、このページは # が変わったら読み込み直す。
@@ -38,18 +40,21 @@
 <script>
 (function () {
   var BACK = { p: "https://claude.ai/artifact/6NFxD1vaUAgcBTRNkyLQbU", t: "https://claude.ai/artifact/MuWHSH6yir1jSEhkzMnwCt" };
-  var raw = decodeURIComponent((location.hash || "").slice(1)).split("|");
+  var h = decodeURIComponent((location.hash || "").slice(1));
+  if (h) { try { sessionStorage.setItem("nc", h); } catch (e) {} } else { try { h = sessionStorage.getItem("nc") || ""; } catch (e) {} }
+  // 番号をアドレス欄・履歴に残しにくくする（# の後ろを消す）
+  if (location.hash) { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
+  var raw = h.split("|");
   var n = (raw[0] || "").replace(/[^\d+]/g, "");
   var back = BACK[raw[1]] || BACK.p;
   if (n.length < 3) return;
   var shown = n.replace(/^(0\d0)(\d{4})(\d{4})$/, "$1-$2-$3").replace(/^(0\d{1,3})(\d{2,4})(\d{4})$/, "$1-$2-$3");
   document.getElementById("num").textContent = shown;
-  document.title = "電話：" + shown;
   var call = document.getElementById("call"); call.href = "tel:" + n; call.hidden = false;
   var b = document.getElementById("back"); b.href = back; b.hidden = false;
   document.getElementById("msg").textContent = "①「📞 発信する」を押すと電話がかかります。② 電話が終わったら「↩ 配車アプリに戻る」を押してください。";
   // 同じタブで別の電話番号を開いたときは、番号を出し直す（発信はボタンを押したときだけ）
-  window.addEventListener("hashchange", function () { location.reload(); });
+  window.addEventListener("hashchange", function () { if (location.hash) location.reload(); });
 })();
 </script>
 </body>
